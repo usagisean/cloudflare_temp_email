@@ -208,13 +208,22 @@ const generateName = async () => {
     }
 };
 
+const generateSubDomain = () => {
+    let subDomain = "";
+    while (subDomain.length < 6) {
+        subDomain += Math.random().toString(36).substring(2);
+    }
+    return subDomain.substring(0, 6);
+}
+
 const newEmail = async () => {
     try {
         // If custom names are disabled, send empty name to trigger backend auto-generation
         const nameToSend = openSettings.value.disableCustomAddressName ? "" : emailName.value;
+        const domainToSend = `${generateSubDomain()}.${emailDomain.value}`;
         const res = await props.newAddressPath(
             nameToSend,
-            emailDomain.value,
+            domainToSend,
             cfToken.value
         );
         jwt.value = res["jwt"];

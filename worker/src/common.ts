@@ -2,7 +2,7 @@ import { Context } from 'hono';
 import { Jwt } from 'hono/utils/jwt'
 import { WorkerMailerOptions } from 'worker-mailer';
 
-import { getBooleanValue, getDomains, getStringValue, getIntValue, getUserRoles, getDefaultDomains, getJsonSetting, getAnotherWorkerList, hashPassword, getJsonObjectValue } from './utils';
+import { getBooleanValue, getDomains, getStringValue, getIntValue, getUserRoles, getDefaultDomains, getJsonSetting, getAnotherWorkerList, hashPassword, getJsonObjectValue, resolveMatchedDomain } from './utils';
 import { unbindTelegramByAddress } from './telegram_api/common';
 import { CONSTANTS } from './constants';
 import { AdminWebhookSettings, WebhookMail, WebhookSettings } from './models';
@@ -17,15 +17,16 @@ export const isSendMailEnabled = (
     c: Context<HonoCustomType>,
     mailDomain: string
 ): boolean => {
+    const matchedDomain = resolveMatchedDomain(mailDomain, getDomains(c)) || mailDomain;
     // Check resend token for domain or global
     const resendEnabled = c.env.RESEND_TOKEN || c.env[
-        `RESEND_TOKEN_${mailDomain.replace(/\./g, "_").toUpperCase()}`
+        `RESEND_TOKEN_${matchedDomain.replace(/\./g, "_").toUpperCase()}`
     ];
     if (resendEnabled) return true;
 
     // Check SMTP config for domain
     const smtpConfigMap = getJsonObjectValue<Record<string, WorkerMailerOptions>>(c.env.SMTP_CONFIG);
-    if (smtpConfigMap && smtpConfigMap[mailDomain]) return true;
+    if (smtpConfigMap && smtpConfigMap[matchedDomain]) return true;
 
     // Check SEND_MAIL binding
     if (c.env.SEND_MAIL) return true;
@@ -211,8 +212,9 @@ export const newAddress = async (
             domain = allowDomains[Math.floor(Math.random() * allowDomains.length)];
         }
     }
+    domain = getStringValue(domain).trim().replace(/\.+$/, "").toLowerCase();
     // check domain is valid
-    if (!domain || !allowDomains.includes(domain)) {
+    if (!domain || !resolveMatchedDomain(domain, allowDomains)) {
         throw new Error(msgs.InvalidDomainMsg)
     }
     // create address

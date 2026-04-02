@@ -6,7 +6,7 @@ import { WorkerMailer, WorkerMailerOptions } from 'worker-mailer';
 
 import i18n from '../i18n';
 import { CONSTANTS } from '../constants'
-import { getJsonSetting, getDomains, getIntValue, getBooleanValue, getStringValue, getJsonObjectValue, getSplitStringListValue } from '../utils';
+import { getJsonSetting, getDomains, getIntValue, getBooleanValue, getStringValue, getJsonObjectValue, getSplitStringListValue, resolveMatchedDomain } from '../utils';
 import { GeoData } from '../models'
 import { handleListQuery, updateAddressUpdatedAt } from '../common'
 
@@ -71,8 +71,9 @@ const sendMailByResend = async (
     }
 ): Promise<void> => {
     const mailDomain = address.split("@")[1];
+    const matchedDomain = resolveMatchedDomain(mailDomain, getDomains(c)) || mailDomain;
     const token = c.env[
-        `RESEND_TOKEN_${mailDomain.replace(/\./g, "_").toUpperCase()}`
+        `RESEND_TOKEN_${matchedDomain.replace(/\./g, "_").toUpperCase()}`
     ] || c.env.RESEND_TOKEN;
     const resend = new Resend(token);
     const { data, error } = await resend.emails.send({
@@ -134,7 +135,8 @@ export const sendMail = async (
     // check domain
     const mailDomain = address.split("@")[1];
     const domains = getDomains(c);
-    if (!domains.includes(mailDomain)) {
+    const matchedDomain = resolveMatchedDomain(mailDomain, domains);
+    if (!matchedDomain) {
         throw new Error(msgs.InvalidDomainMsg)
     }
     const user_role = c.get("userRolePayload");
@@ -176,11 +178,11 @@ export const sendMail = async (
 
     // send to verified address list, do not update balance
     const resendEnabled = c.env.RESEND_TOKEN || c.env[
-        `RESEND_TOKEN_${mailDomain.replace(/\./g, "_").toUpperCase()}`
+        `RESEND_TOKEN_${matchedDomain.replace(/\./g, "_").toUpperCase()}`
     ];
     // send by smtp
     const smtpConfigMap = getJsonObjectValue<Record<string, WorkerMailerOptions>>(c.env.SMTP_CONFIG);
-    const smtpConfig = smtpConfigMap ? smtpConfigMap[mailDomain] : null;
+    const smtpConfig = smtpConfigMap ? smtpConfigMap[matchedDomain] : null;
     // send by verified address list
     let sendByVerifiedAddressList = false;
     if (c.env.SEND_MAIL) {

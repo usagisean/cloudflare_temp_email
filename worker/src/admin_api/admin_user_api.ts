@@ -1,7 +1,7 @@
 import { Context } from 'hono';
 
 import { CONSTANTS } from '../constants';
-import { getJsonSetting, saveSetting, checkUserPassword, getDomains, getUserRoles } from '../utils';
+import { getJsonSetting, saveSetting, checkUserPassword, getDomains, getUserRoles, resolveMatchedDomain } from '../utils';
 import { UserSettings, GeoData, UserInfo, RoleAddressConfig } from "../models";
 import { handleListQuery } from '../common'
 import UserBindAddressModule from '../user_api/bind_address';
@@ -26,7 +26,7 @@ export default {
         if (settings.enableMailVerify && settings.verifyMailSender) {
             const mailDomain = settings.verifyMailSender.split("@")[1];
             const domains = getDomains(c);
-            if (!domains.includes(mailDomain)) {
+            if (!resolveMatchedDomain(mailDomain, domains)) {
                 return c.text(`${msgs.VerifyMailDomainInvalidMsg} ${JSON.stringify(domains, null, 2)}`, 400)
             }
         }

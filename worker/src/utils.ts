@@ -150,6 +150,38 @@ export const getDomains = (c: Context<HonoCustomType>): string[] => {
     return c.env.DOMAINS;
 }
 
+const normalizeDomain = (
+    domain: string | undefined | null
+): string => {
+    return getStringValue(domain)
+        .trim()
+        .replace(/\.+$/, "")
+        .toLowerCase();
+}
+
+export const resolveMatchedDomain = (
+    targetDomain: string | undefined | null,
+    domains: string[] | undefined | null
+): string | null => {
+    const normalizedTargetDomain = normalizeDomain(targetDomain);
+    if (!normalizedTargetDomain || !domains?.length) {
+        return null;
+    }
+    for (const domain of domains) {
+        const normalizedDomain = normalizeDomain(domain);
+        if (!normalizedDomain) {
+            continue;
+        }
+        if (
+            normalizedTargetDomain === normalizedDomain
+            || normalizedTargetDomain.endsWith(`.${normalizedDomain}`)
+        ) {
+            return normalizedDomain;
+        }
+    }
+    return null;
+}
+
 export const getUserRoles = (c: Context<HonoCustomType>): UserRole[] => {
     if (!c.env.USER_ROLES) {
         return [];

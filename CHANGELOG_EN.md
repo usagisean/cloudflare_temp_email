@@ -10,6 +10,7 @@
 
 ### Features
 
+- feat: |Address| Support 6-character random subdomains when creating new mailboxes; frontend now creates addresses like `name@sub123.domain.com`, and Worker domain validation plus send-mail config resolution now allow parent-domain wildcard matching
 - feat: |Admin API| `/admin/new_address` endpoint now returns `address_id` field, avoiding additional query after address creation (#912)
 - feat: |Auto Reply| Add regex matching support for sender filter using `/pattern/` syntax (e.g. `/@example\.com$/`), backward compatible with prefix matching
 - feat: |Turnstile| Add global Turnstile CAPTCHA for all login forms via `ENABLE_GLOBAL_TURNSTILE_CHECK` env var (#767)
