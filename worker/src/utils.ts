@@ -150,6 +150,13 @@ export const getDomains = (c: Context<HonoCustomType>): string[] => {
     return c.env.DOMAINS;
 }
 
+export const getRandomSubdomainDomains = (c: Context<HonoCustomType>): string[] => {
+    if (!c.env.RANDOM_SUBDOMAIN_DOMAINS) {
+        return [];
+    }
+    return getStringArray(c.env.RANDOM_SUBDOMAIN_DOMAINS);
+}
+
 const normalizeDomain = (
     domain: string | undefined | null
 ): string => {
@@ -400,6 +407,7 @@ export default {
     getStringArray,
     getDefaultDomains,
     getDomains,
+    getRandomSubdomainDomains,
     getUserRoles,
     getAnotherWorkerList,
     getPasswords,
